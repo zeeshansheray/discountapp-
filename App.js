@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, Button } from 'react-native';
+import { StyleSheet, Text, View, TextInput, Button, Alert } from 'react-native';
+import Modal from 'react-native-modal';
 
 export default function App() {
   const [price, setPrice] = useState('');
@@ -9,6 +10,8 @@ export default function App() {
   const [discountInput, setdiscountInput] = useState(false);
   const [priceResult, setPriceResult] = useState(null);
   const [discountResult, setDiscountResult] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
   var totalDiscount = null;
   var newPrice = null;
 
@@ -24,13 +27,29 @@ export default function App() {
   }
 
   const checkDiscount = () => {
-    newPrice = (price - (price * (discount / 100))).toFixed(2);
-    totalDiscount = (price - newPrice).toFixed(2);
-    setPriceResult(newPrice);
-    setDiscountResult(totalDiscount);
+    if ((price || discount) != '') {
+      newPrice = (price - (price * (discount / 100))).toFixed(2);
+      totalDiscount = (price - newPrice).toFixed(2);
+      setPriceResult(newPrice);
+      setDiscountResult(totalDiscount);
+    }
+    else {
+      Alert.alert('Please enter the details first.')
+    }
+
+  }
+  const saveResult = () => {
     console.log("new price is " + priceResult);
     console.log("discount is " + discountResult);
-
+    if (priceResult == null) {
+      Alert.alert('Calculate discount first');
+    }
+    else {
+      var array = [price, discount, priceResult];
+      var newStateArray = history.slice();
+      newStateArray.push(array);
+      setHistory(newStateArray);
+    }
   }
 
   return (
@@ -38,8 +57,8 @@ export default function App() {
       <View style={styles.headingBox}>
         <Text style={styles.heading}>Discount Check</Text></View>
       <View style={styles.textInputBox}>
-        <Text style={styles.textInput} onPress={() => { setpriceInput(true), setdiscountInput(false) }} >{price == '' ? "Enter price" : price}</Text>
-        <Text style={styles.textInput} onPress={() => { setdiscountInput(true); setpriceInput(false) }}>{discount == '' ? "Enter discount %" : discount}</Text>
+        <Text style={styles.textInput} onPress={() => { setpriceInput(true), setdiscountInput(false) }} >{price == '' ? "Enter price (rs)" : price}</Text>
+        <Text style={styles.textInput} onPress={() => { setdiscountInput(true); setpriceInput(false) }}>{discount == '' ? "Enter discount (%)" : discount}</Text>
       </View>
       <View style={styles.viewstyle}>
         <View style={{ width: '32%', marginRight: '1%' }}><Button onPress={() => { onclickButton("1") }} color="#001529" title="1" value="1" /></View>
@@ -62,13 +81,26 @@ export default function App() {
         <View style={{ width: '32%' }}><Button onPress={() => { priceInput ? setPrice(price.slice(0, -1)) : setDiscount(discount.slice(0, -1)) }} title="del" color="#001529" value="del" /></View>
       </View>
       <View style={styles.viewstyle}>
-        <View style={{ width: '30%', marginRight: '1%', marginLeft: '37%' }}>
+        <View style={{ width: '28%', marginRight: '1%', marginLeft: '6%' }}>
           <Button title="Discount" color="green" onPress={() => checkDiscount()} /></View>
-        <View style={{ width: '30%', marginRight: '1%' }}><Button title="Save" color="darkblue" /></View>
+        <View style={{ width: '28%', marginRight: '1%' }}><Button title="Save" onPress={() => saveResult()} color="darkblue" /></View>
+        <View style={{ width: '28%', marginRight: '1%' }}><Button title="History" onPress={() => { history.length == 0 ? Alert.alert('Nothing in the history!') : setModalVisible(!modalVisible) }} color="red" /></View>
       </View>
       <View style={styles.resultBox}>
         <Text style={styles.result}>{priceResult == null ? <View></View> : "Final Price: " + priceResult + ' Rs' + '\nYou saved: ' + discountResult + ' Rs'}</Text></View>
+        <View>
+        <Modal isVisible={modalVisible}>
+          <View>
+  <View style={{backgroundColor:'white',height:'60%',width:'100%'}}><View><Text style={{textAlign:'center', fontSize:29,color:'black', fontWeight:'bold', textAlign:'center'}}>History</Text>{history.map((historyNum,index) =>
+  <Text style={{textAlign:'center', marginTop:'3%'}}>{index}.  Price:  {historyNum[0]}   Discount:  {historyNum[1] }   New Price: {historyNum[2]}</Text>
+  )}</View>
+            <View style={{width:'32%', position:'absolute', left:'66%', top:'83%'}}>
+            <Button title="Hide modal" color="#001529" onPress={()=>{setModalVisible(!modalVisible)}} /></View></View>
+          </View>
+        </Modal>
+    </View>
       <StatusBar style="auto" />
+ 
     </View>
   );
 }
@@ -96,9 +128,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#001529',
     marginTop: 10,
     color: 'white',
-    fontSize: 27,
+    fontSize: 21,
     padding: 10,
-    textAlign: 'left',
+    textAlign: 'center',
   },
   textInputBox: {
     top: '25%',
@@ -120,5 +152,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#001529',
     textAlign: 'center'
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 22
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
   }
 });
